@@ -1,0 +1,19 @@
+---
+applications:
+  - name: knowledge-hub-presign
+    memory: 128M
+    instances: 1
+    buildpacks:
+      - nodejs_buildpack
+    command: node app.js
+    health-check-type: http
+    health-check-http-endpoint: /health
+    env:
+      NODE_ENV: production
+      BUCKET_NAME: hcp-749ac7cb-25b1-4ff0-8bfa-f5a5f438f1ea
+      BUCKET_REGION: eu-central-1
+      KEY_PREFIX: knowledge-hub/
+      # S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY must be set via:
+      # cf set-env knowledge-hub-presign S3_ACCESS_KEY_ID <your-key>
+      # cf set-env knowledge-hub-presign S3_SECRET_ACCESS_KEY <your-secret>
+      # Never put credentials in this file

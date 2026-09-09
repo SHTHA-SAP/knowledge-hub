@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Knowledge Hub — Upload</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #4F46E5 0%, #6D63F0 50%, #8B7FF5 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    /* ── Two-panel card ── */
+    .upload-card {
+      display: flex;
+      width: 100%;
+      max-width: 840px;
+      background: #fff;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      min-height: 500px;
+    }
+
+    /* ════════════════════════════════════
+       LEFT PANEL
+    ════════════════════════════════════ */
+    .left-panel {
+      flex: 0 0 42%;
+      padding: 40px 36px 36px;
+      border-right: 1px solid #EDEDFB;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .left-panel h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #3730A3;
+      margin-bottom: 22px;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      flex: 1;
+      border: 2.5px dashed #7C73EA;
+      border-radius: 16px;
+      background: #F5F4FF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 20px 28px;
+      cursor: pointer;
+      transition: background .18s, border-color .18s;
+      user-select: none;
+    }
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      background: #ECEAFF;
+      border-color: #3730A3;
+    }
+
+    /* Cloud-upload SVG */
+    .cloud-svg { width: 82px; height: 66px; margin-bottom: 18px; }
+
+    .drop-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #3730A3;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .or-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 75%;
+      margin-bottom: 16px;
+    }
+    .or-row::before,
+    .or-row::after { content:''; flex:1; height:1px; background:#C4BFF5; }
+    .or-row span   { font-size: 12px; color: #9E99D8; }
+
+    .browse-btn {
+      background: #3730A3;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      padding: 11px 44px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .18s;
+    }
+    .browse-btn:hover { background: #2d2890; }
+
+    /* Formats note — under the box */
+    .formats-note {
+      margin-top: 13px;
+      font-size: 11.5px;
+      color: #999;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .formats-note strong { color: #777; }
+
+    #fileInput { display: none; }
+
+    /* ════════════════════════════════════
+       RIGHT PANEL
+    ════════════════════════════════════ */
+    .right-panel {
+      flex: 1;
+      background: #F5F4FF;
+      padding: 40px 36px 36px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .right-panel h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #3730A3;
+      margin-bottom: 22px;
+    }
+
+    /* File list */
+    .file-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      overflow-y: auto;
+      min-height: 200px;
+      max-height: 320px;
+      padding-right: 4px;
+    }
+    .file-list::-webkit-scrollbar { width: 4px; }
+    .file-list::-webkit-scrollbar-thumb { background: #C4BFF5; border-radius: 2px; }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #B8B2EC;
+      font-style: italic;
+      min-height: 160px;
+    }
+
+    /* File item */
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border-radius: 13px;
+      padding: 10px 14px;
+      box-shadow: 0 2px 10px rgba(79,70,229,.08);
+      animation: slideIn .2s ease;
+    }
+    @keyframes slideIn {
+      from { opacity:0; transform:translateY(-7px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .file-item.error-item { background: #FFF0F0; }
+
+    /* Circular progress ring */
+    .ring-wrap {
+      flex-shrink: 0;
+      position: relative;
+      width: 46px;
+      height: 46px;
+    }
+    .ring-wrap svg {
+      position: absolute;
+      inset: 0;
+    }
+    .ring-wrap .ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #4F46E5;
+      pointer-events: none;
+    }
+
+    /* File info */
+    .file-info { flex:1; min-width:0; }
+    .file-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #3730A3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-meta {
+      font-size: 11px;
+      color: #9E99D8;
+      margin-top: 2px;
+    }
+    .renamed-note {
+      font-size: 10px;
+      color: #7C73EA;
+      margin-top: 2px;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Action icon */
+    .action-icon {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all .18s;
+    }
+    .action-icon.check  { background:#ECEAFF; color:#3730A3; cursor:default; }
+    .action-icon.remove { color:#C4BFF5; }
+    .action-icon.remove:hover { background:#FDE8E8; color:#C0392B; }
+    .action-icon.err    { background:#FDE8E8; color:#C0392B; cursor:default; font-size:13px; font-weight:700; }
+
+    /* Buttons */
+    .action-row {
+      display: flex;
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .btn-upload {
+      flex:1;
+      background: #3730A3;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-upload:hover:not(:disabled) { background:#2d2890; }
+    .btn-upload:disabled { background:#B0A8E8; cursor:not-allowed; }
+
+    .btn-cancel {
+      flex:1;
+      background: transparent;
+      color: #3730A3;
+      border: 2px solid #3730A3;
+      border-radius: 30px;
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-cancel:hover { background:#ECEAFF; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 22px;
+      font-size: 11.5px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      font-family: "Courier New", Courier, monospace;
+    }
+  </style>
+</head>
+<body>
+
+<div class="upload-card">
+
+  <!-- ══════════ LEFT: Drop zone ══════════ -->
+  <div class="left-panel">
+    <h2>File Upload</h2>
+
+    <div class="drop-zone" id="dropZone"
+         onclick="document.getElementById('fileInput').click()">
+
+      <!-- Cloud upload icon -->
+      <svg class="cloud-svg" viewBox="0 0 82 66" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M58 46H24C15.2 46 8 39.2 8 30.5C8 22.8 13.5 16.5 21 15.2C22 9.1 27.6 4.5 34.5 4.5C41.4 4.5 47 9.1 48 15.2C55.5 16.5 61 22.8 61 30.5C61 31.8 60.8 33 60.4 34.1"
+              stroke="#5B5BE6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M48 46H60C65.5 46 70 41.7 70 36.4C70 31.1 65.5 26.8 60 26.8H58.5"
+              stroke="#5B5BE6" stroke-width="2.8" stroke-linecap="round"/>
+        <line x1="41" y1="62" x2="41" y2="36" stroke="#5B5BE6" stroke-width="2.8" stroke-linecap="round"/>
+        <path d="M31 46 L41 36 L51 46" stroke="#5B5BE6" stroke-width="2.8"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+
+      <div class="drop-label">Drag and Drop Files</div>
+      <div class="or-row"><span>Or</span></div>
+      <button class="browse-btn"
+              onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
+        Browse
+      </button>
+    </div>
+
+    <!-- Note under box -->
+    <div class="formats-note">
+      <strong>Allowed formats only:</strong><br>
+      PDF &nbsp;·&nbsp; DOCX &nbsp;·&nbsp; HTML &nbsp;·&nbsp; TXT<br>
+      JPEG &nbsp;·&nbsp; JPG &nbsp;·&nbsp; PNG &nbsp;·&nbsp; TIFF
+    </div>
+
+    <input type="file" id="fileInput" multiple
+           accept=".pdf,.docx,.html,.txt,.jpeg,.jpg,.png,.tiff"/>
+  </div>
+
+  <!-- ══════════ RIGHT: File queue ══════════ -->
+  <div class="right-panel">
+    <h2>Uploading</h2>
+
+    <div class="file-list" id="fileList">
+      <div class="empty-state" id="emptyState">No files selected yet</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-upload" id="uploadBtn" disabled>Upload</button>
+      <button class="btn-cancel" id="cancelBtn">Cancel</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MEA NORTH COE footer -->
+<div class="footer">MEA NORTH COE</div>
+
+<script>
+  // ── CONFIG ────────────────────────────────────────────────────────────────
+  const PRESIGN_ENDPOINT = "YOUR_CF_APP_URL_HERE/presign";
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const ALLOWED_EXT = ["pdf","docx","html","txt","jpeg","jpg","png","tiff"];
+
+  const CONTENT_TYPES = {
+    pdf:  "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    html: "text/html",
+    txt:  "text/plain",
+    jpeg: "image/jpeg",
+    jpg:  "image/jpeg",
+    png:  "image/png",
+    tiff: "image/tiff",
+  };
+
+  let queue     = [];
+  let nextId    = 0;
+  let uploading = false;
+
+  // ── Sanitize: silently fix filename ──────────────────────────────────────
+  function sanitize(name) {
+    const dot = name.lastIndexOf(".");
+    if (dot === -1) return name.replace(/[^a-zA-Z0-9\-]/g, "-").replace(/-{2,}/g,"-").replace(/^-+|-+$/g,"");
+    const base  = name.slice(0, dot);
+    const ext   = name.slice(dot + 1);
+    const clean = base
+      .replace(/[^a-zA-Z0-9\-]/g, "-")   // spaces, underscores, brackets → hyphen
+      .replace(/-{2,}/g, "-")             // collapse multiple hyphens
+      .replace(/^-+|-+$/g, "");           // trim leading / trailing hyphens
+    return `${clean}.${ext}`;
+  }
+
+  function ext(name)  { return name.split(".").pop().toLowerCase(); }
+
+  function fmtSize(b) {
+    if (b < 1024)    return b + " B";
+    if (b < 1048576) return (b/1024).toFixed(0) + " KB";
+    return (b/1048576).toFixed(1) + " MB";
+  }
+
+  // ── Circular progress ring ────────────────────────────────────────────────
+  function ring(pct, status) {
+    const R = 19, C = 2 * Math.PI * R; // circumference ≈ 119.4
+    const offset = C * (1 - Math.min(pct,100) / 100);
+    const stroke = status === "done"  ? "#3730A3"
+                 : status === "error" ? "#E53E3E"
+                 :                      "#4F46E5";
+    const label  = status === "done"  ? "100%"
+                 : status === "error" ? "ERR"
+                 :                      pct + "%";
+    return `
+      <div class="ring-wrap">
+        <svg width="46" height="46" viewBox="0 0 46 46">
+          <circle cx="23" cy="23" r="${R}" fill="none" stroke="#E8E6FF" stroke-width="4"/>
+          <circle cx="23" cy="23" r="${R}" fill="none" stroke="${stroke}" stroke-width="4"
+            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+            stroke-linecap="round"
+            style="transform:rotate(-90deg);transform-origin:50% 50%"/>
+        </svg>
+        <div class="ring-label" style="color:${stroke}">${label}</div>
+      </div>`;
+  }
+
+  // ── Render full list ──────────────────────────────────────────────────────
+  function render() {
+    const list  = document.getElementById("fileList");
+    const empty = document.getElementById("emptyState");
+
+    if (!queue.length) {
+      list.innerHTML = "";
+      list.appendChild(empty);
+      empty.style.display = "flex";
+      document.getElementById("uploadBtn").disabled = true;
+      return;
+    }
+    empty.style.display = "none";
+
+    list.innerHTML = queue.map(it => itemHTML(it)).join("");
+
+    const hasPending = queue.some(i => i.status === "pending");
+    document.getElementById("uploadBtn").disabled = !hasPending || uploading;
+  }
+
+  function itemHTML(it) {
+    const icon = it.status === "done"
+      ? `<button class="action-icon check"  disabled>✓</button>`
+      : it.status === "error"
+      ? `<button class="action-icon err"    disabled title="${esc(it.errMsg||'')}">!</button>`
+      : `<button class="action-icon remove" onclick="remove(${it.id})">✕</button>`;
+
+    const renamed = it.wasRenamed
+      ? `<div class="renamed-note">Renamed from: ${esc(it.original)}</div>`
+      : "";
+
+    return `
+      <div class="file-item ${it.status==="error"?"error-item":""}" id="fi-${it.id}">
+        ${ring(it.pct, it.status)}
+        <div class="file-info">
+          <div class="file-name" title="${esc(it.name)}">${esc(it.name)}</div>
+          <div class="file-meta">${fmtSize(it.file.size)}</div>
+          ${renamed}
+        </div>
+        ${icon}
+      </div>`;
+  }
+
+  // ── Patch one item without full re-render ─────────────────────────────────
+  function patch(it) {
+    const el = document.getElementById(`fi-${it.id}`);
+    if (!el) return;
+    el.outerHTML = itemHTML(it);
+    const hasPending = queue.some(i => i.status === "pending");
+    document.getElementById("uploadBtn").disabled = !hasPending || uploading;
+  }
+
+  function remove(id) {
+    queue = queue.filter(i => i.id !== id);
+    render();
+  }
+
+  // ── Handle incoming files ─────────────────────────────────────────────────
+  function handleFiles(files) {
+    for (const f of files) {
+      const e = ext(f.name);
+      if (!ALLOWED_EXT.includes(e)) {
+        // Show a brief error row, auto-dismiss after 3 s
+        const id = nextId++;
+        const it = { id, file:f, name:f.name, original:f.name, wasRenamed:false,
+                     status:"error", pct:0, errMsg:`.${e.toUpperCase()} not allowed` };
+        queue.push(it);
+        render();
+        setTimeout(() => { queue = queue.filter(i => i.id !== id); render(); }, 3000);
+        continue;
+      }
+      const clean   = sanitize(f.name);
+      const renamed = clean !== f.name;
+      queue.push({ id:nextId++, file:f, name:clean, original:f.name,
+                   wasRenamed:renamed, status:"pending", pct:0 });
+    }
+    render();
+  }
+
+  // ── Upload all pending files ──────────────────────────────────────────────
+  async function uploadAll() {
+    if (uploading) return;
+    uploading = true;
+    document.getElementById("uploadBtn").disabled = true;
+
+    for (const it of queue.filter(i => i.status === "pending")) {
+      it.status = "uploading";
+      it.pct    = 5;
+      patch(it);
+
+      try {
+        // 1 — get pre-signed URL from CF app
+        const res = await fetch(PRESIGN_ENDPOINT, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ filename: it.name, contentType: CONTENT_TYPES[ext(it.name)] }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || `Server ${res.status}`);
+        }
+        const { url } = await res.json();
+        it.pct = 20;
+        patch(it);
+
+        // 2 — PUT file directly to S3
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", url, true);
+          xhr.setRequestHeader("Content-Type", CONTENT_TYPES[ext(it.name)]);
+          xhr.upload.onprogress = e => {
+            if (e.lengthComputable) {
+              it.pct = Math.round(20 + (e.loaded / e.total) * 80);
+              patch(it);
+            }
+          };
+          xhr.onload  = () => xhr.status < 300 ? resolve() : reject(new Error(`S3 ${xhr.status}`));
+          xhr.onerror = () => reject(new Error("Network error"));
+          xhr.send(it.file);
+        });
+
+        it.status = "done";
+        it.pct    = 100;
+        patch(it);
+
+      } catch (err) {
+        it.status = "error";
+        it.errMsg = err.message;
+        patch(it);
+      }
+    }
+
+    uploading = false;
+    const hasPending = queue.some(i => i.status === "pending");
+    document.getElementById("uploadBtn").disabled = !hasPending;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+                    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // ── Wire up events ────────────────────────────────────────────────────────
+  document.getElementById("fileInput").addEventListener("change", e => {
+    handleFiles(Array.from(e.target.files));
+    e.target.value = "";
+  });
+
+  const dz = document.getElementById("dropZone");
+  dz.addEventListener("dragover",  e => { e.preventDefault(); dz.classList.add("drag-over"); });
+  dz.addEventListener("dragleave", ()  => dz.classList.remove("drag-over"));
+  dz.addEventListener("drop", e => {
+    e.preventDefault();
+    dz.classList.remove("drag-over");
+    handleFiles(Array.from(e.dataTransfer.files));
+  });
+
+  document.getElementById("uploadBtn").addEventListener("click", uploadAll);
+  document.getElementById("cancelBtn").addEventListener("click", () => {
+    if (uploading) return;
+    queue = queue.filter(i => i.status !== "pending");
+    render();
+  });
+</script>
+</body>
+</html>
