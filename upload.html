@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Knowledge Hub</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;min-height:100vh;
+      background:linear-gradient(135deg,#4F46E5 0%,#6D63F0 50%,#8B7FF5 100%);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px}
+    .card{display:flex;width:100%;max-width:860px;background:#fff;border-radius:20px;
+      overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);min-height:520px}
+    /* LEFT */
+    .left{flex:0 0 44%;padding:32px 30px;border-right:1px solid #f0f0f8;display:flex;flex-direction:column;gap:16px}
+    .left h2{font-size:20px;font-weight:800;color:#3D35C0}
+    /* Form fields */
+    .fields{display:flex;flex-direction:column;gap:10px}
+    .field label{display:block;font-size:11px;font-weight:700;color:#7B6FF0;text-transform:uppercase;
+      letter-spacing:.5px;margin-bottom:4px}
+    .field input{width:100%;padding:9px 12px;border:1.5px solid #D0CCFF;border-radius:8px;
+      font-size:13px;color:#32363a;outline:none;transition:border .2s}
+    .field input:focus{border-color:#4F46E5}
+    .field input.err{border-color:#e74c3c}
+    .field input::placeholder{color:#b0a8e8}
+    /* Drop zone */
+    .drop-zone{flex:1;border:2px dashed #7B6FF0;border-radius:12px;background:#F5F4FF;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:20px;cursor:pointer;transition:background .2s,border-color .2s;text-align:center}
+    .drop-zone:hover,.drop-zone.over{background:#EAE8FF;border-color:#3D35C0}
+    .drop-zone svg{width:52px;height:42px;margin-bottom:10px}
+    .drop-zone .dt{font-size:13px;font-weight:700;color:#3D35C0;margin-bottom:10px}
+    .or{display:flex;align-items:center;gap:8px;width:75%;margin-bottom:10px}
+    .or::before,.or::after{content:'';flex:1;height:1px;background:#C5C0F0}
+    .or span{font-size:11px;color:#9990D8}
+    .browse-btn{background:#3D35C0;color:#fff;border:none;border-radius:30px;
+      padding:9px 32px;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s}
+    .browse-btn:hover{background:#2d2890}
+    .fmt-note{font-size:11px;color:#888;text-align:center;line-height:1.5;margin-top:4px}
+    #fileInput{display:none}
+    /* RIGHT */
+    .right{flex:1;background:#F5F4FF;padding:32px 30px;display:flex;flex-direction:column}
+    .right h2{font-size:20px;font-weight:800;color:#3D35C0;margin-bottom:20px}
+    .file-list{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height:340px}
+    .empty{flex:1;display:flex;align-items:center;justify-content:center;
+      font-size:13px;color:#B0A8E8;font-style:italic}
+    /* File item */
+    .fitem{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;
+      padding:10px 12px;box-shadow:0 2px 8px rgba(91,91,230,.08);animation:si .2s ease}
+    @keyframes si{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+    .ring{flex-shrink:0;position:relative;width:42px;height:42px}
+    .ring svg{transform:rotate(-90deg)}
+    .ring .pt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:9px;font-weight:700;color:#5B5BE6}
+    .finfo{flex:1;min-width:0}
+    .fname{font-size:12.5px;font-weight:700;color:#3D35C0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .forig{font-size:10px;color:#9990D8;font-style:italic;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fsize{font-size:10.5px;color:#B0A8E8;margin-top:1px}
+    .sicon{flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;
+      align-items:center;justify-content:center;cursor:pointer;font-size:13px}
+    .sicon.chk{background:#E8E6FF;color:#3D35C0}
+    .sicon.rm{background:transparent;color:#C5C0F0}
+    .sicon.rm:hover{background:#fde8e8;color:#c0392b}
+    .sicon.er{background:#fde8e8;color:#c0392b}
+    /* Progress */
+    .pw{display:none;margin-bottom:14px}
+    .pw.show{display:block}
+    .pt2{font-size:11px;color:#9990D8;text-align:right;margin-top:3px}
+    /* Buttons */
+    .btns{display:flex;gap:12px;margin-top:20px}
+    .btn{flex:1;padding:12px;border:none;border-radius:30px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+    .bup{background:#3D35C0;color:#fff}
+    .bup:hover:not(:disabled){background:#2d2890}
+    .bup:disabled{background:#B0A8E8;cursor:not-allowed}
+    .bcn{background:transparent;color:#3D35C0;border:2px solid #3D35C0}
+    .bcn:hover{background:#F0EEFF}
+    /* Footer */
+    .footer{margin-top:18px;font-size:11.5px;color:rgba(255,255,255,.5);
+      letter-spacing:2.5px;text-transform:uppercase;font-family:"Courier New",monospace}
+  </style>
+</head>
+<body>
+<div class="card">
+  <!-- LEFT -->
+  <div class="left">
+    <h2>File Upload</h2>
+    <div class="fields">
+      <div class="field">
+        <label>Customer Name</label>
+        <input type="text" id="customer" placeholder="e.g. SAP Saudi Arabia" oninput="onMeta()"/>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="fdate" oninput="onMeta()"/>
+      </div>
+      <div class="field">
+        <label>Topic</label>
+        <input type="text" id="topic" placeholder="e.g. HXM Design" oninput="onMeta()"/>
+      </div>
+    </div>
+    <div class="drop-zone" id="dz" onclick="document.getElementById('fileInput').click()">
+      <svg viewBox="0 0 64 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 40H16C9 40 4 35 4 28C4 21.5 8.5 16 15 15C15.8 8.5 21.5 3.5 28.5 3.5
+          C35.5 3.5 41.2 8.5 42 15C48.5 16 53 21.5 53 28C53 29 52.8 30 52.5 31H48
+          C52 31 55.5 34 55.5 38.2C55.5 39.2 54.7 40 53.7 40H48Z"
+          stroke="#5B5BE6" stroke-width="2.5" stroke-linejoin="round" fill="none"/>
+        <line x1="32" y1="50" x2="32" y2="30" stroke="#5B5BE6" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M24 38 L32 30 L40 38" stroke="#5B5BE6" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <div class="dt">Drag and Drop Files</div>
+      <div class="or"><span>Or</span></div>
+      <button class="browse-btn" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Browse</button>
+    </div>
+    <div class="fmt-note"><strong>Allowed formats only:</strong><br>PDF · DOCX · HTML · TXT · JPEG · JPG · PNG · TIFF</div>
+    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.html,.txt,.jpeg,.jpg,.png,.tiff"/>
+  </div>
+  <!-- RIGHT -->
+  <div class="right">
+    <h2>Uploading</h2>
+    <div class="file-list" id="fl"><div class="empty" id="emp">Fill in the details and select files</div></div>
+    <div class="btns">
+      <button class="btn bup" id="upBtn" disabled>Upload</button>
+      <button class="btn bcn" id="cnBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="footer">MEA NORTH COE</div>
+<script>
+const EP = "https://knowledge-hub-presign.cbc39bf.kyma.ondemand.com/presign";
+const EXTS = ["pdf","docx","html","txt","jpeg","jpg","png","tiff"];
+const CTYPES = {
+  pdf:"application/pdf",
+  docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  html:"text/html",txt:"text/plain",jpeg:"image/jpeg",jpg:"image/jpeg",
+  png:"image/png",tiff:"image/tiff"
+};
+let queue=[],nid=0,busy=false;
+
+// Set today's date
+document.getElementById("fdate").value = new Date().toISOString().split("T")[0];
+
+function sanitize(s){
+  return (s||"").replace(/[^a-zA-Z0-9\-]/g,"-").replace(/-{2,}/g,"-").replace(/^-+|-+$/g,"");
+}
+function getExt(n){return n.split(".").pop().toLowerCase()}
+function fmtSize(b){return b<1048576?(b/1024).toFixed(0)+" KB":(b/1048576).toFixed(1)+" MB"}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+function genName(file){
+  const customer = sanitize(document.getElementById("customer").value.trim()) || "Unknown";
+  const rawDate  = document.getElementById("fdate").value; // YYYY-MM-DD
+  const topic    = sanitize(document.getElementById("topic").value.trim()) || "General";
+  const ext      = getExt(file.name);
+  let   date     = rawDate;
+  if(rawDate){
+    const [y,m,d] = rawDate.split("-");
+    date = `${d}-${m}-${y}`;
+  }
+  return `${customer}-${date}-${topic}.${ext}`;
+}
+
+function metaReady(){
+  const c = document.getElementById("customer").value.trim();
+  const d = document.getElementById("fdate").value;
+  const t = document.getElementById("topic").value.trim();
+  return c.length>=1 && d.length>=1 && t.length>=1;
+}
+
+function ring(pct,st){
+  const r=17,circ=2*Math.PI*r,off=circ*(1-pct/100);
+  const col=st==="done"?"#3D35C0":st==="error"?"#e74c3c":"#5B5BE6";
+  const lbl=st==="done"?"100%":st==="error"?"ERR":pct+"%";
+  return `<div class="ring">
+    <svg width="42" height="42" viewBox="0 0 42 42">
+      <circle cx="21" cy="21" r="${r}" fill="none" stroke="#E8E6FF" stroke-width="4"/>
+      <circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="4"
+        stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+        stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%"/>
+    </svg>
+    <div class="pt">${lbl}</div></div>`;
+}
+
+function render(){
+  const fl=document.getElementById("fl");
+  const emp=document.getElementById("emp");
+  if(queue.length===0){
+    emp.style.display="flex";
+    fl.innerHTML="";fl.appendChild(emp);
+    document.getElementById("upBtn").disabled=true;
+    return;
+  }
+  emp.style.display="none";
+  fl.innerHTML=queue.map(it=>{
+    const sicon=it.status==="done"
+      ?`<div class="sicon chk">&#10003;</div>`
+      :it.status==="error"
+      ?`<div class="sicon er" title="${esc(it.err||"")}">!</div>`
+      :`<div class="sicon rm" onclick="remove(${it.id})">&#10005;</div>`;
+    const origNote=it.renamed
+      ?`<div class="forig">Was: ${esc(it.orig)}</div>`
+      :`<div class="forig">Name OK</div>`;
+    return `<div class="fitem" id="it${it.id}">
+      ${ring(it.pct,it.status)}
+      <div class="finfo">
+        <div class="fname" title="${esc(it.name)}">${esc(it.name)}</div>
+        ${origNote}
+        <div class="fsize">${fmtSize(it.file.size)}</div>
+      </div>${sicon}</div>`;
+  }).join("");
+  const hasPending=queue.some(i=>i.status==="pending");
+  document.getElementById("upBtn").disabled=!hasPending||busy;
+}
+
+function patch(it){
+  const el=document.getElementById("it"+it.id);
+  if(!el)return;
+  const r=el.querySelector(".ring");
+  if(r)r.outerHTML=ring(it.pct,it.status);
+  const si=el.querySelector(".sicon");
+  if(si){
+    if(it.status==="done"){si.className="sicon chk";si.innerHTML="&#10003;";si.onclick=null}
+    else if(it.status==="error"){si.className="sicon er";si.innerHTML="!";si.title=it.err||"";si.onclick=null}
+  }
+  document.getElementById("upBtn").disabled=!queue.some(i=>i.status==="pending")||busy;
+}
+
+function remove(id){queue=queue.filter(i=>i.id!==id);render()}
+
+function onMeta(){if(queue.length>0){queue.forEach(it=>{it.name=genName(it.file);it.renamed=it.name!==it.file.name});render()}}
+
+function addFiles(files){
+  for(const f of files){
+    const ext=getExt(f.name);
+    if(!EXTS.includes(ext)){
+      const id=nid++;
+      queue.push({id,file:f,name:f.name,orig:f.name,renamed:false,status:"error",pct:0,err:`.${ext.toUpperCase()} not allowed`});
+      render();
+      setTimeout(()=>{queue=queue.filter(i=>i.id!==id);render()},3000);
+      continue;
+    }
+    if(!metaReady()){
+      alert("Please fill in Customer Name, Date and Topic before selecting files.");
+      return;
+    }
+    const name=genName(f);
+    queue.push({id:nid++,file:f,name,orig:f.name,renamed:name!==f.name,status:"pending",pct:0});
+  }
+  render();
+}
+
+async function uploadAll(){
+  if(busy)return;
+  if(!metaReady()){
+    ["customer","topic"].forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el.value.trim())el.classList.add("err");
+    });
+    return;
+  }
+  busy=true;
+  document.getElementById("upBtn").disabled=true;
+  for(const it of queue.filter(i=>i.status==="pending")){
+    it.status="uploading";it.pct=5;patch(it);
+    try{
+      const r=await fetch(EP,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({filename:it.name,contentType:CTYPES[getExt(it.name)]})});
+      if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||`Server ${r.status}`)}
+      const {url}=await r.json();
+      it.pct=20;patch(it);
+      await new Promise((res,rej)=>{
+        const x=new XMLHttpRequest();
+        x.open("PUT",url,true);
+        x.setRequestHeader("Content-Type",CTYPES[getExt(it.name)]);
+        x.upload.onprogress=e=>{if(e.lengthComputable){it.pct=Math.round(20+(e.loaded/e.total)*80);patch(it)}};
+        x.onload=()=>x.status>=200&&x.status<300?res():rej(new Error(`S3 ${x.status}`));
+        x.onerror=()=>rej(new Error("Network error"));
+        x.send(it.file);
+      });
+      it.status="done";it.pct=100;patch(it);
+    }catch(e){it.status="error";it.err=e.message;patch(it)}
+  }
+  busy=false;
+  render();
+}
+
+document.getElementById("fileInput").addEventListener("change",e=>{addFiles(Array.from(e.target.files));e.target.value=""});
+const dz=document.getElementById("dz");
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("over")});
+dz.addEventListener("dragleave",()=>dz.classList.remove("over"));
+dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("over");addFiles(Array.from(e.dataTransfer.files))});
+document.getElementById("upBtn").addEventListener("click",uploadAll);
+document.getElementById("cnBtn").addEventListener("click",()=>{if(!busy){queue=queue.filter(i=>i.status!=="pending");render()}});
+document.getElementById("customer").addEventListener("blur",e=>{if(e.target.value.trim())e.target.classList.remove("err")});
+document.getElementById("topic").addEventListener("blur",e=>{if(e.target.value.trim())e.target.classList.remove("err")});
+</script>
+</body>
+</html>
